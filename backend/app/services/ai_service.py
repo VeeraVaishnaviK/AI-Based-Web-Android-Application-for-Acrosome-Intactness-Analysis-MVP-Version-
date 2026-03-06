@@ -141,6 +141,14 @@ async def analyze_images(
     await record.insert()
     print(f"[OK] Analysis saved: {session_id} | {total} images | {intact_pct}% intact")
 
+    # ── Step 6: Pre-generate PDF so download is instant ──────
+    try:
+        from app.services.pdf_service import generate_analysis_report
+        generate_analysis_report(record)
+        print(f"[OK] PDF pre-generated for {session_id}")
+    except Exception as pdf_err:
+        print(f"[WARN] PDF pre-generation failed (non-fatal): {pdf_err}")
+
     return record
 
 
