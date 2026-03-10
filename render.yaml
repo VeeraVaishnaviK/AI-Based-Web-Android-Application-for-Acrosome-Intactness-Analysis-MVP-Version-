@@ -10,39 +10,33 @@ services:
     region: singapore # Change to your nearest region
     envVars:
       - key: MONGODB_URL
-        sync: false # Set this manually in Render dashboard to MongoDB Atlas URL
+        sync: false # Set as environment variable in Render Dashboard
       - key: DATABASE_NAME
         value: acrosome_db
       - key: HOST
         value: 0.0.0.0
       - key: PORT
         value: 8000
-      - key: DEBUG
-        value: "false"
       - key: SECRET_KEY
-        sync: false # Set a unique secret in environment settings
-      - key: IMAGE_SIZE
-        value: "224"
-      - key: UPLOAD_DIR
-        value: uploads
-      - key: REPORTS_DIR
-        value: reports
+        sync: false # Set as environment variable in Render Dashboard
       - key: ENCRYPTION_KEY
-        sync: false # Set a unique encryption key
+        sync: false # Set as environment variable in Render Dashboard
 
-  - type: web
-    name: acrosome-frontend
-    runtime: static
-    buildCommand: cd frontend && npm install && npm run build
-    staticPublishPath: frontend/dist
+staticSites:
+  - name: acrosome-frontend
+    rootDirectory: frontend
+    buildCommand: npm install && npm run build
+    publishDir: dist
     envVars:
+      - key: NODE_VERSION
+        value: "20.17.0"
       - key: VITE_API_URL
         fromService:
           name: acrosome-api
           type: web
           property: host
     routes:
-      # SPA fallback: Rewrite all non-file routes to index.html
+      # SPA fallback
       - type: rewrite
         source: /*
         destination: /index.html
