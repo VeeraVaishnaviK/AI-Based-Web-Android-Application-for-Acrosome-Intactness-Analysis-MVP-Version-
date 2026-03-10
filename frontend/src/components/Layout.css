@@ -78,6 +78,20 @@
     animation: fadeIn 0.4s ease-out;
 }
 
+.global-footer {
+    padding: 20px 28px;
+    text-align: center;
+    border-top: 1px solid var(--border-light);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.global-footer p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
 /* ── Responsive ──────────────────────── */
 @media (max-width: 768px) {
     .layout-main {

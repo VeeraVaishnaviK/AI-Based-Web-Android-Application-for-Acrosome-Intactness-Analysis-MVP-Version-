@@ -137,7 +137,7 @@ export default function LoginPage() {
                 </form>
 
                 <p className="login-footer-text">
-                    NexAcro Clinical AI Platform · v1.0
+                    Copyright © 2025 Nexacro . All Rights Reserved. | Developed by Lin's Infotech Company Ltd.
                 </p>
             </div>
         </div>

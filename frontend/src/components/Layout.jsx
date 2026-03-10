@@ -32,6 +32,11 @@ export default function Layout() {
                 <main className="content">
                     <Outlet />
                 </main>
+                <footer className="global-footer">
+                    <p>
+                        Copyright © 2025 Nexacro . All Rights Reserved. | Developed by Lin's Infotech Company Ltd.
+                    </p>
+                </footer>
             </div>
 
             {/* Acrosome particle background */}
