@@ -23,5 +23,6 @@ COPY . .
 # 🏗️ Create necessary runtime directories
 RUN mkdir -p uploads reports ml_models
 
-# 🛂 Command to run the application using Gunicorn (production optimized)
-CMD ["gunicorn", "app.main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+# 🛂 Command to run the application using Gunicorn (optimized for Free Tier)
+# Use 1 worker to save memory and a longer timeout for initial model loading
+CMD ["gunicorn", "app.main:app", "-w", "1", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--timeout", "120"]
