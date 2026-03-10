@@ -3,10 +3,10 @@ import './Logo.css';
 
 export default function Logo({ size = 'md' }) {
     const heights = {
-        sm: 36,
-        md: 48,
-        lg: 72,
-        xl: 96,
+        sm: 48,
+        md: 72,
+        lg: 100,
+        xl: 140,
     };
     const h = heights[size] || heights.md;
 
@@ -15,7 +15,7 @@ export default function Logo({ size = 'md' }) {
             <img
                 src={logoImg}
                 alt="NexAcro"
-                className="logo-icon animate-float"
+                className="logo-icon"
                 style={{ height: h, width: 'auto' }}
             />
         </div>
