@@ -87,46 +87,67 @@ def predict_single(image_bytes: bytes) -> dict:
 def predict_batch(images_bytes: list[bytes]) -> list[dict]:
     """
     Predict on a batch of images.
-    Per-image errors fall back to mock predictions so the batch never crashes.
+    Performs inference on the entire batch at once for maximum performance.
     """
     _load_model_lazy()
     start = time.perf_counter()
 
-    intact_probs      = []
-    per_image_times   = []
+    processed_images = []
+    valid_indices = []
 
+    # Step 1: Preprocess all images
     for i, img_bytes in enumerate(images_bytes):
-        t0 = time.perf_counter()
         try:
-            processed     = preprocess_from_bytes(img_bytes)
-            input_tensor  = np.expand_dims(processed, axis=0)
-
-            if _model is not None:
-                pred        = _model.predict(input_tensor, verbose=0)
-                intact_prob = float(pred[0][0])
-            else:
-                intact_prob = _mock_predict()
+            processed = preprocess_from_bytes(img_bytes)
+            processed_images.append(processed)
+            valid_indices.append(i)
         except Exception as e:
-            print(f"[WARN] predict_batch: image {i+1} failed ({type(e).__name__}: {e}), using mock result")
-            intact_prob = _mock_predict()
+            print(f"[WARN] predict_batch: image {i+1} preprocessing failed ({type(e).__name__}: {e})")
 
-        intact_probs.append(intact_prob)
-        per_image_times.append((time.perf_counter() - t0) * 1000)
+    results = [None] * len(images_bytes)
 
-    results = []
-    for intact_prob, img_ms in zip(intact_probs, per_image_times):
-        damaged_prob   = 1.0 - intact_prob
-        classification = "intact" if intact_prob >= settings.CONFIDENCE_THRESHOLD else "damaged"
-        confidence     = max(intact_prob, damaged_prob)
-        results.append({
-            "classification":    classification,
-            "confidence":        round(confidence, 4),
-            "intact_probability": round(intact_prob, 4),
-            "damaged_probability": round(damaged_prob, 4),
-            "processing_time_ms": round(img_ms, 2),
-        })
+    # Step 2: Run batch prediction if model is loaded
+    if _model is not None and processed_images:
+        try:
+            # Stack all images into a single array (N, 224, 224, 3)
+            batch_tensor = np.stack(processed_images)
+            predictions = _model.predict(batch_tensor, verbose=0)
+            
+            # predictions is likely (N, 1) or (N, 2)
+            for idx, pred_out in zip(valid_indices, predictions):
+                intact_prob = float(pred_out[0])
+                results[idx] = _format_result(intact_prob, (time.perf_counter() - start) * 1000 / len(processed_images))
+        except Exception as e:
+            print(f"[ERROR] predict_batch: Batch prediction failed ({e}), falling back to mock")
+            for idx in valid_indices:
+                if results[idx] is None:
+                    results[idx] = _format_result(_mock_predict(), 10.0)
+    else:
+        # Mock mode or fallback
+        for i in range(len(images_bytes)):
+            if results[i] is None:
+                results[i] = _format_result(_mock_predict(), 5.0)
+
+    # Fill any remaining None values (safety)
+    for i in range(len(results)):
+        if results[i] is None:
+            results[i] = _format_result(_mock_predict(), 1.0)
 
     return results
+
+
+def _format_result(intact_prob: float, elapsed_ms: float) -> dict:
+    """Helper to format a single prediction result."""
+    damaged_prob = 1.0 - intact_prob
+    classification = "intact" if intact_prob >= settings.CONFIDENCE_THRESHOLD else "damaged"
+    confidence = max(intact_prob, damaged_prob)
+    return {
+        "classification": classification,
+        "confidence": round(confidence, 4),
+        "intact_probability": round(intact_prob, 4),
+        "damaged_probability": round(damaged_prob, 4),
+        "processing_time_ms": round(elapsed_ms, 2),
+    }
 
 
 

@@ -59,22 +59,29 @@ export default function ProcessingPage() {
     }, [grids, patientDetails]);
 
     // 4-step animation: one step every 750ms
+    // If apiResult arrives early, we fast-forward the animation
     useEffect(() => {
+        if (apiResult && currentStep < STEPS.length) {
+            setCurrentStep(STEPS.length);
+            return;
+        }
+
         if (currentStep < STEPS.length && !error) {
             const t = setTimeout(() => setCurrentStep(s => s + 1), 750);
             return () => clearTimeout(t);
         }
-    }, [currentStep, error]);
+    }, [currentStep, error, apiResult]);
 
     // After animation finishes AND API responds, navigate to report
     useEffect(() => {
         if (currentStep >= STEPS.length && apiResult && !hasNavigated.current) {
             hasNavigated.current = true;
+            // Short delay for visual polish
             const t = setTimeout(() => {
                 navigate('/report', {
                     state: { analysis: apiResult }
                 });
-            }, 600);
+            }, 300);
             return () => clearTimeout(t);
         }
     }, [currentStep, apiResult, navigate]);
