@@ -79,6 +79,9 @@
 }
 
 .global-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 50;
     padding: 20px 28px;
     text-align: center;
     border-top: 1px solid var(--border-light);

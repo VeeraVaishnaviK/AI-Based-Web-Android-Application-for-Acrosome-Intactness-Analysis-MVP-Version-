@@ -5,8 +5,10 @@ Uses fpdf2. Page width = 210mm, margins = 15mm each side, usable = 180mm.
 
 import os
 import uuid
+import tempfile
 from datetime import datetime
 
+from PIL import Image, ImageDraw
 from fpdf import FPDF
 
 from app.config import settings
@@ -45,12 +47,17 @@ class AcrosomeReport(FPDF):
         self.set_text_color(0, 0, 0)
 
     def footer(self):
-        self.set_y(-14)
+        self.set_y(-18)
         self.set_font("Helvetica", "I", 8)
         self.set_text_color(120, 120, 120)
         self.cell(
-            0, 8,
-            f"Page {self.page_no()}/{{nb}}  |  Generated {datetime.now().strftime('%Y-%m-%d %H:%M')}  |  NexAcro AI",
+            0, 5,
+            "Copyright © 2025 Nexacro . All Rights Reserved. | Developed by Lin's Infotech Company Ltd.",
+            align="C", new_x="LMARGIN", new_y="NEXT"
+        )
+        self.cell(
+            0, 5,
+            f"Page {self.page_no()}/{{nb}}  |  Generated {datetime.now().strftime('%Y-%m-%d %H:%M')}",
             align="C",
         )
 
@@ -184,22 +191,56 @@ def generate_analysis_report(
         if i % 2 == 0:
             pdf.set_x(15)
         pdf.set_font("Helvetica", "B", 10)
-        pdf.cell(45, ROW_H, lbl + ":", new_x="END")
+        pdf.cell(45, ROW_H, lbl + ":", new_x="RIGHT", new_y="TOP")
         pdf.set_font("Helvetica", "", 10)
         if i % 2 == 0:
-            pdf.cell(45, ROW_H, val, new_x="END")
+            pdf.cell(45, ROW_H, val, new_x="RIGHT", new_y="TOP")
         else:
             pdf.cell(0, ROW_H, val, new_x="LMARGIN", new_y="NEXT")
+
     pdf.ln(6)
+
+    # Pie Chart Graphic
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+        pie_path = tmp.name
+    try:
+        img = Image.new("RGBA", (400, 400), (255, 255, 255, 0))
+        draw = ImageDraw.Draw(img)
+        intact_angle = int(360 * (record.intact_percentage / 100))
+        # Damaged slice
+        draw.pieslice([(10, 10), (390, 390)], 0, 360, fill=(200, 40, 40, 255))
+        if intact_angle > 0:
+            draw.pieslice([(10, 10), (390, 390)], 0, intact_angle, fill=(22, 140, 50, 255))
+        img.save(pie_path, "PNG")
+        pdf.image(pie_path, x=85, y=pdf.get_y(), w=40)
+        pdf.ln(45)
+    except Exception as e:
+        print(f"Error drawing pie chart: {e}")
+    finally:
+        if os.path.exists(pie_path):
+            os.remove(pie_path)
 
     # ══ Section 3 – Per-Image Results ════════════════════════════════════════
     pdf.section_title("3.  Individual Image Results")
-    pdf.table_header()
 
-    for idx, result in enumerate(record.image_results, 1):
-        pdf.table_row(idx, result)
-
-    pdf.ln(6)
+    results = record.image_results
+    if len(results) == 16:
+        # Group into 4 grids of 4
+        for grid_idx in range(4):
+            pdf.set_font("Helvetica", "B", 10)
+            pdf.set_fill_color(240, 240, 240)
+            pdf.cell(180, 8, f"Grid {grid_idx + 1}", border=1, fill=True, new_x="LMARGIN", new_y="NEXT", align="C")
+            pdf.table_header()
+            for i in range(4):
+                result = results[grid_idx * 4 + i]
+                pdf.table_row(i + 1, result)
+            pdf.ln(4)
+    else:
+        # Generic list
+        pdf.table_header()
+        for idx, result in enumerate(results, 1):
+            pdf.table_row(idx, result)
+        pdf.ln(6)
 
     # ══ Section 4 – Notes (if any) ═══════════════════════════════════════════
     if record.notes:
