@@ -102,22 +102,22 @@ export default function HistoryPage() {
                                 ) : (
                                     filtered.map((a, idx) => (
                                         <tr key={a.id} className="animate-fade-in" style={{ animationDelay: `${idx * 40}ms` }}>
-                                            <td>{new Date(a.created_at).toLocaleDateString()}</td>
-                                            <td><span style={{ fontWeight: 500 }}>{a.notes?.startsWith('Patient: ') ? a.notes.replace('Patient: ', '') : (a.patient_id || '—')}</span></td>
-                                            <td><span className="sample-id">{a.sample_id || '—'}</span></td>
-                                            <td>{a.total_images}</td>
-                                            <td>
+                                            <td data-label="Date">{new Date(a.created_at).toLocaleDateString()}</td>
+                                            <td data-label="Patient"><span style={{ fontWeight: 500 }}>{a.notes?.startsWith('Patient: ') ? a.notes.replace('Patient: ', '') : (a.patient_id || '—')}</span></td>
+                                            <td data-label="Sample ID"><span className="sample-id">{a.sample_id || '—'}</span></td>
+                                            <td data-label="Images">{a.total_images}</td>
+                                            <td data-label="Intact %">
                                                 <div className="pct-bar-wrap">
                                                     <div className="pct-bar" style={{ width: `${a.intact_percentage}%` }} />
                                                     <span>{a.intact_percentage}%</span>
                                                 </div>
                                             </td>
-                                            <td>
+                                            <td data-label="Status">
                                                 <span className={`badge ${a.intact_percentage >= 75 ? 'badge-success' : a.intact_percentage >= 50 ? 'badge-info' : 'badge-error'}`}>
                                                     {a.intact_percentage >= 75 ? 'Good' : a.intact_percentage >= 50 ? 'Fair' : 'Low'}
                                                 </span>
                                             </td>
-                                            <td>
+                                            <td data-label="Action">
                                                 <button
                                                     className="btn btn-ghost btn-sm"
                                                     onClick={() => navigate('/report', { state: { analysisId: a.id } })}
