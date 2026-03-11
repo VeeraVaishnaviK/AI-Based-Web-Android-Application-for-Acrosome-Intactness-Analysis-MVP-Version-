@@ -26,106 +26,6 @@ function canvasConvert(file) {
 }
 
 /**
- * Highly strict image validation using manual Computer Vision techniques.
- * Rejects screenshots, natural photos, selfies, and pure noise.
- * Only accepts images with properties typical of microscopy:
- * - Low edge density (mostly empty background)
- * - Low colorfulness (stained one hue)
- * - Specific brightness distributions
- */
-async function validateImageContent(file) {
-    return new Promise((resolve) => {
-        if (file.type === 'image/heic' || file.name.match(/\.(heic|heif)$/i)) {
-            resolve(true); // Can't easily canvas-draw HEIC immediately without heavy async conversion
-            return;
-        }
-
-        const url = URL.createObjectURL(file);
-        const img = new Image();
-        img.onload = () => {
-            const size = 150;
-            const canvas = document.createElement('canvas');
-            canvas.width = size;
-            canvas.height = size;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            ctx.drawImage(img, 0, 0, size, size);
-            URL.revokeObjectURL(url);
-
-            try {
-                const imgData = ctx.getImageData(0, 0, size, size).data;
-                const total = size * size;
-
-                let rgSum = 0, ybSum = 0;
-                let grays = new Float32Array(total);
-                let edgePixels = 0;
-                let redGreenPixels = 0;
-
-                // 1. Color && Grayscale Pass
-                for (let y = 0; y < size; y++) {
-                    for (let x = 0; x < size; x++) {
-                        const idx = (y * size + x) * 4;
-                        const r = imgData[idx], g = imgData[idx + 1], b = imgData[idx + 2];
-
-                        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-                        grays[y * size + x] = gray;
-
-                        rgSum += Math.abs(r - g);
-                        ybSum += Math.abs(0.5 * (r + g) - b);
-
-                        // Strict color reject: If pixel is heavily red, green or yellow
-                        if ((r > 120 && g < 90 && b < 90) ||
-                            (g > 120 && r < 90 && b < 90) ||
-                            (r > 150 && g > 150 && b < 100)) {
-                            redGreenPixels++;
-                        }
-
-                        // 2. Edge Detection (Sobel-like difference)
-                        if (x < size - 1 && y < size - 1) {
-                            const rightIdx = (y * size + (x + 1)) * 4;
-                            const downIdx = ((y + 1) * size + x) * 4;
-                            const rGray = 0.299 * imgData[rightIdx] + 0.587 * imgData[rightIdx + 1] + 0.114 * imgData[rightIdx + 2];
-                            const dGray = 0.299 * imgData[downIdx] + 0.587 * imgData[downIdx + 1] + 0.114 * imgData[downIdx + 2];
-
-                            if (Math.abs(gray - rGray) > 15 || Math.abs(gray - dGray) > 15) {
-                                edgePixels++;
-                            }
-                        }
-                    }
-                }
-
-                const colorfulness = (rgSum / total) + (ybSum / total);
-                const edgeDensity = edgePixels / total;
-                const badColorRatio = redGreenPixels / total;
-
-                // STRICT RULES FOR MICROSCOPY vs OTHERS:
-                // 1. A normal photo (face, dog, street) is very cluttered -> high edge density (> 0.20)
-                // 2. Text / Screenshots have extremely sharp edges -> moderate edge density but NO color (colorfulness ~0)
-                // 3. Microscopy images have a few cells (edges) but mostly empty fluid background -> edge density 0.02 - 0.15
-                // 4. Clinical stains are never bright red/green -> badColorRatio must be VERY low.
-
-                if (
-                    edgeDensity > 0.18 ||       // Cluttered like a normal photo or detailed drawing
-                    edgeDensity < 0.005 ||      // A blank screen / solid color
-                    colorfulness > 35 ||        // Excessively colorful
-                    badColorRatio > 0.02        // Contains obvious non-microscopic shades
-                ) {
-                    console.warn(`Rejected! Edge=${edgeDensity.toFixed(3)}, Color=${colorfulness.toFixed(1)}, BadCol=${badColorRatio.toFixed(3)}`);
-                    resolve(false);
-                    return;
-                }
-
-                resolve(true);
-            } catch (e) {
-                console.error("Validation error", e);
-                resolve(true);
-            }
-        };
-        img.onerror = () => { URL.revokeObjectURL(url); resolve(true); };
-        img.src = url;
-    });
-}
-
-/**
  * Convert a file to a JPEG-compatible File.
  * Strategy: heic2any → canvas drawImage → raw file (best-effort).
  */
@@ -150,7 +50,7 @@ async function toCompatible(file) {
     try {
         return await canvasConvert(file);
     } catch (e) {
-        console.warn('Canvas fallback failed, using raw file:', e);
+        console.warn('Canvas conversion failed, using raw file:', e);
     }
 
     // 3️⃣ Last resort — return original file as-is
@@ -190,18 +90,6 @@ export default function UploadPage() {
         setConverting(prev => ({ ...prev, [gridId]: true }));
 
         try {
-            // Validate images to reject dog/scenic photos or non-medical uploads
-            for (const file of candidates) {
-                const isValid = await validateImageContent(file);
-                if (!isValid) {
-                    alert(`Upload Rejected: The image "${file.name}" does not appear to be a valid microscopic clinical sample. Please upload actual acrosome sample images.`);
-                    setConverting(prev => ({ ...prev, [gridId]: false }));
-                    const input = document.getElementById(`fileInput-${gridId}`);
-                    if (input) input.value = '';
-                    return; // END PROCESS immediately
-                }
-            }
-
             // Convert any HEIC files to JPEG (with fallbacks)
             const converted = await Promise.all(candidates.map(toCompatible));
 
