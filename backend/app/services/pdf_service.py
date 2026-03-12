@@ -6,6 +6,7 @@ Uses fpdf2. Page width = 210mm, margins = 15mm each side, usable = 180mm.
 import os
 import uuid
 import tempfile
+from typing import Optional
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
