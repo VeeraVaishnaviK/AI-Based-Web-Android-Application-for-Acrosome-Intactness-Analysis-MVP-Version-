@@ -30,6 +30,7 @@ async def analyze_images(
     user_id: Optional[str] = None,
     sample_id: Optional[str] = None,
     patient_id: Optional[str] = None,
+    patient_name: Optional[str] = None,
     age: Optional[int] = None,
     occupation: Optional[str] = None,
     height: Optional[float] = None,
@@ -51,6 +52,7 @@ async def analyze_images(
         recent_cutoff = datetime.utcnow() - timedelta(seconds=60)
         existing = await AnalysisRecord.find_one(
             AnalysisRecord.patient_id == patient_id,
+            AnalysisRecord.patient_name == patient_name,
             AnalysisRecord.sample_id == sample_id,
             AnalysisRecord.created_at >= recent_cutoff
         )
@@ -144,6 +146,7 @@ async def analyze_images(
         notes=notes,
         sample_id=sample_id,
         patient_id=patient_id,
+        patient_name=patient_name,
         age=age,
         occupation=occupation,
         height=height,

@@ -62,6 +62,15 @@ class AcrosomeReport(FPDF):
             align="C",
         )
 
+    def _clean_filename(self, name):
+        """Convert name to filesystem-safe string (alphanumeric + underscore)."""
+        if not name: return "Unknown"
+        import re
+        # Replace spaces/special chars with underscore, then strip duplicates
+        cleaned = re.sub(r'[^a-zA-Z0-9\s]', '', str(name))
+        cleaned = cleaned.replace(' ', '_')
+        return cleaned if cleaned else "Unknown"
+
     # ── Helpers ──────────────────────────────────────────────────────────────
     def clean(self, txt):
         if not txt: return ""
@@ -137,6 +146,7 @@ def generate_analysis_report(
     record: AnalysisRecord,
     title: str = "Acrosome Intactness Analysis Report",
     include_images: bool = False,
+    patient_name: Optional[str] = None,
 ) -> str:
     """
     Generate a cleanly aligned PDF and return the saved file path.
@@ -245,6 +255,7 @@ def generate_analysis_report(
             os.remove(pie_path)
 
     # ══ Section 3 – Per-Image Results ════════════════════════════════════════
+    pdf.add_page()
     pdf.section_title("3.  Individual Image Results")
 
     results = record.image_results
@@ -287,7 +298,11 @@ def generate_analysis_report(
 
     # ── Save ─────────────────────────────────────────────────────────────────
     os.makedirs(settings.REPORTS_DIR, exist_ok=True)
-    filename = f"NexAcro_Report_{record.session_id}_{uuid.uuid4().hex[:6]}.pdf"
+    
+    # Use patient name if available, otherwise session_id
+    id_part = pdf._clean_filename(patient_name) if patient_name else "Report"
+    filename = f"NexAcro_Report_{id_part}_{record.session_id}_{uuid.uuid4().hex[:6]}.pdf"
+    
     report_path = os.path.join(settings.REPORTS_DIR, filename)
     pdf.output(report_path)
     print(f"[OK] PDF generated: {report_path}")

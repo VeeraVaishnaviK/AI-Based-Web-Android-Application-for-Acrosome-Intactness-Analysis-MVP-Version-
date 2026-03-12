@@ -65,6 +65,7 @@ export default function ReportPage() {
             sessionId: analysis.session_id,
             sampleId: analysis.sample_id || '—',
             patientId: analysis.patient_id || '—',
+            patientName: analysis.patient_name || analysis.patient_id || '—',
             age: analysis.age || '—',
             occupation: analysis.occupation || '—',
             height: analysis.height ? `${analysis.height} cm` : '—',
@@ -87,7 +88,7 @@ export default function ReportPage() {
         if (!analysis?.id) return;
         setDownloading(true);
         try {
-            const data = await generateReport(analysis.id);
+            const data = await generateReport(analysis.id, report.patientName);
             if (data.download_url) {
                 // Use a standard non-window-open method for better iOS compatibility
                 const link = document.createElement('a');

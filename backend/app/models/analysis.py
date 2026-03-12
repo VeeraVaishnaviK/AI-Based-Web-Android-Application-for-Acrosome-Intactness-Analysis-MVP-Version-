@@ -43,6 +43,7 @@ class AnalysisRecord(Document):
     notes: Optional[str] = None
     sample_id: Optional[str] = None
     patient_id: Optional[str] = None
+    patient_name: Optional[str] = None
     
     # ── Patient Context ──────────────────────────────────────
     age: Optional[int] = None

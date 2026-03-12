@@ -40,9 +40,16 @@ async def generate_report(request: ReportGenerateRequest):
     try:
         # Reuse pre-generated PDF if it already exists (fast path)
         import glob
+        # Search for any NexAcro report that belongs to this session
         existing = glob.glob(
-            os.path.join(settings.REPORTS_DIR, f"report_{record.session_id}_*.pdf")
+            os.path.join(settings.REPORTS_DIR, f"NexAcro_Report_*_{record.session_id}_*.pdf")
         )
+        # Fallback: also check if session_id was used as the primary identifier
+        if not existing:
+            existing = glob.glob(
+                os.path.join(settings.REPORTS_DIR, f"NexAcro_Report_{record.session_id}_*.pdf")
+            )
+            
         if existing:
             report_path = existing[0]
             print(f"[OK] Reusing pre-generated PDF: {report_path}")
@@ -51,6 +58,7 @@ async def generate_report(request: ReportGenerateRequest):
                 record=record,
                 title=request.title or "Acrosome Intactness Analysis Report",
                 include_images=request.include_images,
+                patient_name=request.patient_name,
             )
 
         filename = os.path.basename(report_path)

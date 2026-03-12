@@ -45,7 +45,7 @@ export default function ProcessingPage() {
                     files,
                     patientDetails?.sampleId || '',
                     patientDetails?.patientId || '',
-                    `Patient: ${patientDetails?.patientName || 'Unknown'}`,
+                    patientDetails?.patientName || '',
                     patientDetails
                 );
 

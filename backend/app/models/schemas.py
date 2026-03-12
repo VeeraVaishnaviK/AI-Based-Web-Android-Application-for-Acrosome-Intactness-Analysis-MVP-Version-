@@ -64,6 +64,7 @@ class AnalysisResponse(BaseModel):
     image_results: list[ImageResultResponse]
     sample_id: Optional[str] = None
     patient_id: Optional[str] = None
+    patient_name: Optional[str] = None
     age: Optional[int] = None
     occupation: Optional[str] = None
     height: Optional[float] = None
@@ -85,6 +86,7 @@ class AnalysisListItem(BaseModel):
     damaged_percentage: float
     sample_id: Optional[str] = None
     patient_id: Optional[str] = None
+    patient_name: Optional[str] = None
     age: Optional[int] = None
     occupation: Optional[str] = None
     height: Optional[float] = None
@@ -138,6 +140,7 @@ class ReportGenerateRequest(BaseModel):
     analysis_id: str
     include_images: bool = False
     title: Optional[str] = "Acrosome Intactness Analysis Report"
+    patient_name: Optional[str] = None
 
 
 class ReportResponse(BaseModel):

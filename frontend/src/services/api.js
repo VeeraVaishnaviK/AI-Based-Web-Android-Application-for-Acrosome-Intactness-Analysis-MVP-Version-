@@ -98,6 +98,7 @@ export async function analyzeImages(files, sampleId, patientId, notes, patientDe
 
     if (sampleId) formData.append('sample_id', sampleId);
     if (patientId) formData.append('patient_id', patientId);
+    if (patientDetails.patientName) formData.append('patient_name', patientDetails.patientName);
     if (notes) formData.append('notes', notes);
     
     // Add additional fields
@@ -133,11 +134,14 @@ export async function listAnalyses(page = 1, pageSize = 20) {
 }
 
 // ── Reports ─────────────────────────────────
-export async function generateReport(analysisId) {
+export async function generateReport(analysisId, patientName) {
     const response = await fetch(`${BASE_URL}/api/reports/generate`, {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({ analysis_id: analysisId }),
+        body: JSON.stringify({ 
+            analysis_id: analysisId,
+            patient_name: patientName
+        }),
     });
     const data = await handleResponse(response);
 
