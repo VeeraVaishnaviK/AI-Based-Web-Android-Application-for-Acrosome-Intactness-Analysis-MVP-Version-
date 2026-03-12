@@ -49,9 +49,19 @@ export default function ReportPage() {
     const report = useMemo(() => {
         if (!analysis) return null;
         const dateObj = new Date(analysis.created_at);
+        // Force Indian Standard Time (IST)
+        const dateStr = dateObj.toLocaleDateString('en-IN', { 
+            year: 'numeric', month: 'long', day: 'numeric', 
+            timeZone: 'Asia/Kolkata' 
+        });
+        const timeStr = dateObj.toLocaleTimeString('en-IN', { 
+            hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
+            timeZone: 'Asia/Kolkata' 
+        });
+
         return {
-            date: dateObj.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }),
-            time: dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+            date: dateStr,
+            time: timeStr,
             sessionId: analysis.session_id,
             sampleId: analysis.sample_id || '—',
             patientId: analysis.patient_id || '—',
@@ -82,7 +92,7 @@ export default function ReportPage() {
                 // Use a standard non-window-open method for better iOS compatibility
                 const link = document.createElement('a');
                 link.href = data.download_url;
-                link.download = `Acrosome_Report_${analysis.sample_id || analysis.id}.pdf`;
+                link.download = `NexAcro_Report_${analysis.sample_id || analysis.id}.pdf`;
                 link.target = '_blank';
                 document.body.appendChild(link);
                 link.click();

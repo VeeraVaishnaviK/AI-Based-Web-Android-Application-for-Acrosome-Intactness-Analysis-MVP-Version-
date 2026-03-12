@@ -3,7 +3,7 @@ Analysis record document model for MongoDB (Beanie ODM).
 Stores the results of each acrosome intactness analysis session.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from beanie import Document
@@ -54,7 +54,7 @@ class AnalysisRecord(Document):
     is_smoker: Optional[bool] = False
     is_using_drugs: Optional[bool] = False
 
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     total_processing_time_ms: float = 0.0
 
     class Settings:

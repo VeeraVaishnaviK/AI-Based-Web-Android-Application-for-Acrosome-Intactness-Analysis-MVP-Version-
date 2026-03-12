@@ -7,6 +7,7 @@ import os
 import uuid
 import tempfile
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from PIL import Image, ImageDraw
 from fpdf import FPDF
@@ -98,17 +99,14 @@ class AcrosomeReport(FPDF):
         self.set_text_color(0, 0, 0)
 
     def table_row(self, idx: int, result):
-        # Alternate row fill
-        if idx % 2 == 0:
-            self.set_fill_color(245, 248, 255)
-        else:
-            self.set_fill_color(255, 255, 255)
-
         # Overflow page guard
         if self.get_y() > 265:
             self.add_page()
             self.table_header()
 
+        # Set style for the row (Reset colors explicitly)
+        self.set_fill_color(255, 255, 255)
+        self.set_text_color(0, 0, 0)
         self.set_font("Helvetica", "", 9)
 
         # #
@@ -147,10 +145,13 @@ def generate_analysis_report(
     pdf.alias_nb_pages()
     pdf.add_page()
 
+    # Convert to IST (UTC+5:30)
+    ist_time = record.created_at.astimezone(ZoneInfo("Asia/Kolkata"))
+    
     # ══ Section 1 – Session Information ══════════════════════════════════════
     pdf.section_title("1.  Session Information")
     pdf.kv_row("Session ID",       record.session_id)
-    pdf.kv_row("Date & Time",      record.created_at.strftime("%Y-%m-%d  %H:%M:%S  UTC"))
+    pdf.kv_row("Date & Time IST",  ist_time.strftime("%Y-%m-%d  %I:%M:%S %p"))
     pdf.kv_row("Sample ID",        record.sample_id or "N/A")
     pdf.kv_row("Patient ID",       record.patient_id or "N/A")
     
@@ -286,7 +287,7 @@ def generate_analysis_report(
 
     # ── Save ─────────────────────────────────────────────────────────────────
     os.makedirs(settings.REPORTS_DIR, exist_ok=True)
-    filename = f"report_{record.session_id}_{uuid.uuid4().hex[:6]}.pdf"
+    filename = f"NexAcro_Report_{record.session_id}_{uuid.uuid4().hex[:6]}.pdf"
     report_path = os.path.join(settings.REPORTS_DIR, filename)
     pdf.output(report_path)
     print(f"[OK] PDF generated: {report_path}")

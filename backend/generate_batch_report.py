@@ -231,7 +231,7 @@ def generate_batch_report(folder_path="test_images", patient_id="Not Provided"):
     patient_clean = "".join(c for c in patient_id if c.isalnum() or c in ('-', '_')).strip()
     if not patient_clean: patient_clean = "Unknown"
     
-    report_name = f"Batch_Report_{patient_clean}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
+    report_name = f"NexAcro_Batch_Report_{patient_clean}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
     report_path = os.path.join(reports_dir, report_name)
     pdf.output(report_path)
 
